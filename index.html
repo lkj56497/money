@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#0f766e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="받을 돈">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="manifest" href="manifest.webmanifest">
+<title>받을 돈</title>
+<style>
+  :root{--main:#0f766e;--main2:#14b8a6;--bg:#f0fdfa;--card:#fff;--text:#0f172a;--sub:#64748b;--minus:#e11d48}
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;height:100%}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR",sans-serif;background:var(--bg);color:var(--text);
+    padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom);display:flex;flex-direction:column}
+  header{background:linear-gradient(135deg,var(--main),var(--main2));color:#fff;padding:22px 20px 26px;border-radius:0 0 26px 26px;box-shadow:0 6px 20px rgba(15,118,110,.25)}
+  header .label{font-size:15px;opacity:.9}
+  header .total{font-size:42px;font-weight:800;margin-top:6px;letter-spacing:-1px;word-break:break-all}
+  header .total small{font-size:22px;font-weight:600;margin-left:4px}
+  header .count{font-size:13px;opacity:.85;margin-top:6px}
+  main{flex:1;overflow-y:auto;padding:16px}
+  .card{background:var(--card);border-radius:18px;padding:16px;box-shadow:0 2px 10px rgba(0,0,0,.05);margin-bottom:14px}
+  .amount{width:100%;font-size:30px;font-weight:700;border:2px solid #ccfbf1;border-radius:14px;padding:12px 14px;text-align:right;outline:none;color:var(--text)}
+  .amount:focus{border-color:var(--main2)}
+  .memo{width:100%;font-size:16px;border:2px solid #e2e8f0;border-radius:12px;padding:10px 12px;margin-top:10px;outline:none}
+  .memo:focus{border-color:var(--main2)}
+  .quick{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+  .quick button{flex:1;min-width:70px;border:none;background:#ccfbf1;color:var(--main);font-weight:700;font-size:15px;border-radius:10px;padding:10px 0}
+  .acts{display:flex;gap:10px;margin-top:12px}
+  .acts button{flex:1;border:none;border-radius:14px;padding:16px 0;font-size:19px;font-weight:800;color:#fff}
+  .add{background:var(--main)} .sub{background:var(--minus)}
+  .acts button:active,.quick button:active{transform:scale(.97)}
+  .h-title{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+  .h-title b{font-size:16px}
+  .h-title button{border:none;background:none;color:var(--sub);font-size:14px;padding:4px 6px}
+  ul{list-style:none;margin:0;padding:0}
+  li{display:flex;align-items:center;padding:12px 0;border-top:1px solid #f1f5f9;gap:10px}
+  li:first-child{border-top:none}
+  li .info{flex:1;min-width:0}
+  li .m{font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  li .d{font-size:12px;color:var(--sub);margin-top:2px}
+  li .v{font-weight:800;font-size:17px;white-space:nowrap}
+  li .v.p{color:var(--main)} li .v.n{color:var(--minus)}
+  li .x{border:none;background:#f1f5f9;color:var(--sub);border-radius:8px;width:30px;height:30px;font-size:16px}
+  .empty{color:var(--sub);text-align:center;padding:20px 0;font-size:14px}
+  .toast{position:fixed;left:50%;bottom:calc(30px + env(safe-area-inset-bottom));transform:translateX(-50%) translateY(20px);background:#0f172a;color:#fff;
+    padding:12px 18px;border-radius:12px;font-size:15px;opacity:0;transition:.25s;pointer-events:none;display:flex;gap:12px;align-items:center}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0);pointer-events:auto}
+  .toast button{background:none;border:none;color:#5eead4;font-weight:700;font-size:15px}
+</style>
+</head>
+<body>
+<header>
+  <div class="label">💰 지금까지 받을 돈</div>
+  <div class="total"><span id="total">0</span><small>원</small></div>
+  <div class="count" id="count">아직 기록이 없어요</div>
+</header>
+<main>
+  <div class="card">
+    <input id="amount" class="amount" inputmode="numeric" placeholder="금액 입력" autocomplete="off">
+    <div class="quick">
+      <button data-v="1000">+천</button><button data-v="10000">+만</button>
+      <button data-v="50000">+5만</button><button data-v="100000">+10만</button>
+    </div>
+    <input id="memo" class="memo" placeholder="메모 (선택) 예: 철수 점심값" autocomplete="off">
+    <div class="acts">
+      <button class="add" id="addBtn">＋ 더하기</button>
+      <button class="sub" id="subBtn">－ 빼기</button>
+    </div>
+  </div>
+  <div class="card">
+    <div class="h-title"><b>기록</b><button id="resetBtn">전체 지우기</button></div>
+    <ul id="list"></ul>
+  </div>
+</main>
+<div class="toast" id="toast"><span id="toastMsg"></span><button id="undoBtn">되돌리기</button></div>
+<script>
+const KEY='받을돈_기록';
+let items=[];
+try{items=JSON.parse(localStorage.getItem(KEY))||[]}catch(e){items=[]}
+const $=id=>document.getElementById(id);
+const fmt=n=>Math.abs(n).toLocaleString('ko-KR');
+function save(){try{localStorage.setItem(KEY,JSON.stringify(items))}catch(e){}}
+function parseAmt(){return parseInt(($('amount').value||'').replace(/[^0-9]/g,''),10)||0}
+function setAmt(n){$('amount').value=n?n.toLocaleString('ko-KR'):''}
+function render(){
+  const sum=items.reduce((a,b)=>a+b.v,0);
+  $('total').textContent=(sum<0?'-':'')+fmt(sum);
+  $('count').textContent=items.length?`기록 ${items.length}개`:'아직 기록이 없어요';
+  const ul=$('list');ul.innerHTML='';
+  if(!items.length){ul.innerHTML='<div class="empty">금액을 넣고 더하기를 눌러보세요</div>';return}
+  [...items].reverse().forEach(it=>{
+    const li=document.createElement('li');
+    const d=new Date(it.t);
+    const ds=`${d.getMonth()+1}월 ${d.getDate()}일 ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+    li.innerHTML=`<div class="info"><div class="m"></div><div class="d">${ds}</div></div>
+      <div class="v ${it.v>=0?'p':'n'}">${it.v>=0?'+':'-'}${fmt(it.v)}원</div><button class="x">✕</button>`;
+    li.querySelector('.m').textContent=it.m||(it.v>=0?'더하기':'빼기');
+    li.querySelector('.x').onclick=()=>{
+      const backup=items.slice();
+      items=items.filter(x=>x.id!==it.id);save();render();
+      toast('기록을 지웠어요',()=>{items=backup;save();render()});
+    };
+    ul.appendChild(li);
+  });
+}
+let undoFn=null,tt=null;
+function toast(msg,undo){
+  $('toastMsg').textContent=msg;undoFn=undo;
+  $('undoBtn').style.display=undo?'':'none';
+  $('toast').classList.add('show');clearTimeout(tt);
+  tt=setTimeout(()=>$('toast').classList.remove('show'),3500);
+}
+$('undoBtn').onclick=()=>{if(undoFn)undoFn();undoFn=null;$('toast').classList.remove('show')};
+function commit(sign){
+  const n=parseAmt();
+  if(!n){$('amount').focus();toast('금액을 먼저 넣어주세요');return}
+  const it={id:Date.now()+Math.random(),v:sign*n,m:$('memo').value.trim(),t:Date.now()};
+  items.push(it);save();render();
+  setAmt(0);$('memo').value='';
+  toast(`${fmt(n)}원 ${sign>0?'더했어요':'뺐어요'}`,()=>{items=items.filter(x=>x.id!==it.id);save();render()});
+}
+$('addBtn').onclick=()=>commit(1);
+$('subBtn').onclick=()=>commit(-1);
+$('amount').addEventListener('input',()=>setAmt(parseAmt()));
+$('amount').addEventListener('keydown',e=>{if(e.key==='Enter')commit(1)});
+$('memo').addEventListener('keydown',e=>{if(e.key==='Enter')commit(1)});
+document.querySelectorAll('.quick button').forEach(b=>b.onclick=()=>setAmt(parseAmt()+parseInt(b.dataset.v,10)));
+$('resetBtn').onclick=()=>{
+  if(!items.length)return;
+  if(!confirm('기록을 모두 지울까요?'))return;
+  const backup=items.slice();items=[];save();render();
+  toast('모두 지웠어요',()=>{items=backup;save();render()});
+};
+render();
+if('serviceWorker' in navigator&&location.protocol.startsWith('http')){navigator.serviceWorker.register('sw.js').catch(()=>{})}
+</script>
+</body>
+</html>
